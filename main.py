@@ -12,6 +12,15 @@ Endpoints:
   POST /api/jobs/{id}/cover-letter — regenerate cover letter
   POST /api/scrape              — trigger manual scrape
   GET  /api/stats               — pipeline stats
+
+  Interview Prep:
+  GET  /interview-prep                          — problem list + filters
+  GET  /interview-prep/problem/{id}             — problem detail + practice
+  POST /api/interview/import                    — import problems from GitHub
+  GET  /api/interview/problems                  — list problems (JSON)
+  GET  /api/interview/stats                     — prep statistics
+  POST /api/interview/problems/{id}/status      — update practice status
+  POST /api/interview/problems/{id}/hint        — AI hint/approach/review
 """
 import logging
 import os
@@ -29,7 +38,11 @@ from fastapi.templating import Jinja2Templates
 from pydantic import BaseModel
 from sqlmodel import Session, select
 
-from models import Application, Job, create_tables, engine, get_application, get_job, get_jobs, get_session
+from models import (
+    Application, Job, InterviewProblem, PracticeSession,
+    create_tables, engine, get_application, get_job, get_jobs, get_session,
+    get_interview_problems, get_practice_session, get_interview_stats,
+)
 from scheduler import run_discovery, start_scheduler
 
 load_dotenv()
@@ -359,3 +372,170 @@ def get_stats(session: Session = Depends(get_session)):
             if all_jobs else 0
         ),
     }
+
+
+# ─── Interview Prep ──────────────────────────────────────────────────────────
+
+@app.get("/interview-prep", response_class=HTMLResponse)
+def interview_prep_page(
+    request: Request,
+    company: Optional[str] = None,
+    difficulty: Optional[str] = None,
+    recency: Optional[str] = None,
+    status: Optional[str] = None,
+    session: Session = Depends(get_session),
+):
+    """Interview prep dashboard with filters."""
+    problems = get_interview_problems(session, company=company, difficulty=difficulty, recency=recency, status=status)
+
+    # Attach practice status to each problem for display
+    problems_with_status = []
+    for p in problems:
+        ps = get_practice_session(session, p.id)
+        problems_with_status.append({
+            "problem": p,
+            "status": ps.status if ps else "unsolved",
+        })
+
+    stats = get_interview_stats(session, company=company)
+
+    # Get unique companies for filter pills
+    from sqlmodel import select
+    all_companies = sorted(set(
+        r for r in session.exec(select(InterviewProblem.company).distinct())
+    ))
+
+    return templates.TemplateResponse(
+        "interview_prep.html",
+        {
+            "request": request,
+            "problems": problems_with_status,
+            "stats": stats,
+            "companies": all_companies,
+            "active_company": company,
+            "active_difficulty": difficulty,
+            "active_recency": recency,
+            "active_status": status,
+        },
+    )
+
+
+@app.get("/interview-prep/problem/{problem_id}", response_class=HTMLResponse)
+def problem_detail_page(request: Request, problem_id: int, session: Session = Depends(get_session)):
+    """Problem detail page with practice panel."""
+    problem = session.get(InterviewProblem, problem_id)
+    if not problem:
+        raise HTTPException(status_code=404, detail="Problem not found")
+    practice = get_practice_session(session, problem_id)
+    return templates.TemplateResponse(
+        "problem_detail.html",
+        {
+            "request": request,
+            "problem": problem,
+            "practice": practice,
+        },
+    )
+
+
+@app.post("/api/interview/import")
+def trigger_interview_import():
+    """Import LeetCode problems from GitHub repo. Runs in background."""
+    import threading
+    from ai.interview_importer import import_all_problems
+
+    thread = threading.Thread(
+        target=import_all_problems,
+        kwargs={"config_path": CONFIG_PATH},
+        daemon=True,
+    )
+    thread.start()
+    return {"status": "started", "message": "Importing interview problems in background"}
+
+
+@app.get("/api/interview/problems")
+def list_interview_problems(
+    company: Optional[str] = None,
+    difficulty: Optional[str] = None,
+    recency: Optional[str] = None,
+    status: Optional[str] = None,
+    session: Session = Depends(get_session),
+):
+    """List interview problems with optional filters."""
+    problems = get_interview_problems(session, company=company, difficulty=difficulty, recency=recency, status=status)
+    result = []
+    for p in problems:
+        ps = get_practice_session(session, p.id)
+        result.append({
+            "id": p.id,
+            "title": p.title,
+            "difficulty": p.difficulty,
+            "frequency": p.frequency,
+            "acceptance_rate": p.acceptance_rate,
+            "leetcode_url": p.leetcode_url,
+            "topics": p.topics,
+            "company": p.company,
+            "recency": p.recency,
+            "status": ps.status if ps else "unsolved",
+        })
+    return result
+
+
+@app.get("/api/interview/stats")
+def interview_stats(company: Optional[str] = None, session: Session = Depends(get_session)):
+    """Get interview prep statistics."""
+    return get_interview_stats(session, company=company)
+
+
+class StatusUpdateRequest(BaseModel):
+    status: str  # unsolved | attempted | solved
+    user_solution: Optional[str] = None
+    notes: Optional[str] = None
+
+
+@app.post("/api/interview/problems/{problem_id}/status")
+def update_practice_status(problem_id: int, body: StatusUpdateRequest, session: Session = Depends(get_session)):
+    """Update practice status for a problem."""
+    problem = session.get(InterviewProblem, problem_id)
+    if not problem:
+        raise HTTPException(status_code=404, detail="Problem not found")
+
+    practice = get_practice_session(session, problem_id)
+    if not practice:
+        practice = PracticeSession(problem_id=problem_id)
+
+    practice.status = body.status
+    if body.user_solution is not None:
+        practice.user_solution = body.user_solution
+    if body.notes is not None:
+        practice.notes = body.notes
+    if body.status == "solved" and not practice.completed_at:
+        practice.completed_at = datetime.utcnow()
+
+    session.add(practice)
+    session.commit()
+    return {"status": "ok", "practice_status": practice.status}
+
+
+class HintRequest(BaseModel):
+    hint_type: str  # hint | approach | review
+    user_solution: Optional[str] = None
+
+
+@app.post("/api/interview/problems/{problem_id}/hint")
+def get_ai_hint(problem_id: int, body: HintRequest, session: Session = Depends(get_session)):
+    """Get AI-powered hint, approach explanation, or solution review."""
+    from ai.interview_helper import get_ai_response
+
+    problem = session.get(InterviewProblem, problem_id)
+    if not problem:
+        raise HTTPException(status_code=404, detail="Problem not found")
+
+    response = get_ai_response(
+        problem_title=problem.title,
+        problem_url=problem.leetcode_url,
+        difficulty=problem.difficulty,
+        topics=problem.topics,
+        hint_type=body.hint_type,
+        user_solution=body.user_solution,
+    )
+    return {"response": response}

@@ -152,3 +152,21 @@ linkedin:
     - "AI researcher"
   location_filter: "Europe"
   cookies_file: "data/linkedin_cookies.json"
+
+# Interview preparation config
+interview_prep:
+  enabled: true
+  github_repo: "liquidslr/interview-company-wise-problems"
+  companies:
+    - name: "Google DeepMind"
+      folder: "Google"
+    - name: "Meta AI"
+      folder: "Meta"
+    - name: "Microsoft Research"
+      folder: "Microsoft"
+    - name: "Apple Machine Learning"
+      folder: "Apple"
+    - name: "NVIDIA Research"
+      folder: "Nvidia"
+    - name: "Amazon Robotics"
+      folder: "Amazon"

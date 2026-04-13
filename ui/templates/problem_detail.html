@@ -1,0 +1,289 @@
+{% extends "base.html" %}
+
+{% block title %}{{ problem.title }} — Interview Prep{% endblock %}
+
+{% block head %}
+<style>
+  .detail-layout {
+    display: grid;
+    grid-template-columns: 1fr 440px;
+    gap: 1.5rem;
+    align-items: start;
+  }
+  @media (max-width: 900px) {
+    .detail-layout { grid-template-columns: 1fr; }
+  }
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #666;
+    text-decoration: none;
+    font-size: 0.875rem;
+    margin-bottom: 1rem;
+  }
+  .back-link:hover { color: #1976d2; }
+
+  /* ── Problem info panel ── */
+  .info-panel { padding: 1.5rem; }
+  .problem-title { font-size: 1.4rem; font-weight: 700; line-height: 1.3; margin-bottom: 0.5rem; }
+
+  .meta-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1rem; align-items: center; }
+
+  .diff-badge {
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 700;
+  }
+  .diff-easy { background: #c8e6c9; color: #2e7d32; }
+  .diff-medium { background: #fff9c4; color: #f57f17; }
+  .diff-hard { background: #ffcdd2; color: #c62828; }
+
+  .company-badge {
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    background: #e3f2fd;
+    color: #1565c0;
+  }
+
+  .section-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #888;
+    margin-bottom: 0.5rem;
+    margin-top: 1.25rem;
+  }
+
+  .stat-row {
+    display: flex;
+    gap: 2rem;
+    margin: 0.75rem 0;
+  }
+  .stat-item { text-align: center; }
+  .stat-item .val { font-size: 1.2rem; font-weight: 800; color: #1976d2; }
+  .stat-item .lbl { font-size: 0.7rem; color: #888; text-transform: uppercase; }
+
+  .topic-tag {
+    display: inline-block;
+    padding: 3px 10px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    background: #f5f5f5;
+    color: #555;
+    margin: 2px 4px 2px 0;
+  }
+
+  /* ── Practice panel ── */
+  .practice-panel { padding: 1.5rem; position: sticky; top: 72px; }
+  .practice-panel h2 { font-size: 1rem; font-weight: 700; margin-bottom: 1rem; }
+
+  .status-btns {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+  }
+  .status-btn {
+    flex: 1;
+    padding: 8px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    background: white;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+  }
+  .status-btn:hover { border-color: #1976d2; }
+  .status-btn.active-unsolved { border-color: #999; background: #f5f5f5; color: #555; }
+  .status-btn.active-attempted { border-color: #f57f17; background: #fff9c4; color: #f57f17; }
+  .status-btn.active-solved { border-color: #2e7d32; background: #c8e6c9; color: #2e7d32; }
+
+  .code-area {
+    width: 100%;
+    min-height: 180px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 0.75rem;
+    font-size: 0.8rem;
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+    line-height: 1.6;
+    resize: vertical;
+    color: #333;
+    background: #fafafa;
+  }
+  .code-area:focus { outline: none; border-color: #1976d2; background: white; }
+
+  .notes-area {
+    width: 100%;
+    min-height: 80px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 0.75rem;
+    font-size: 0.85rem;
+    font-family: inherit;
+    line-height: 1.5;
+    resize: vertical;
+    color: #333;
+  }
+  .notes-area:focus { outline: none; border-color: #1976d2; }
+
+  .ai-tools {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: 0.5rem;
+    margin: 0.75rem 0;
+  }
+  .ai-tools .btn { justify-content: center; font-size: 0.78rem; }
+
+  .ai-response {
+    background: #f8f9ff;
+    border-left: 3px solid #1976d2;
+    padding: 0.75rem 1rem;
+    border-radius: 0 8px 8px 0;
+    font-size: 0.83rem;
+    color: #333;
+    line-height: 1.7;
+    white-space: pre-wrap;
+    word-break: break-word;
+    max-height: 400px;
+    overflow-y: auto;
+    display: none;
+  }
+  .ai-response.visible { display: block; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <a href="/interview-prep" class="back-link">← Back to problems</a>
+
+  <div class="detail-layout">
+    <!-- Left: Problem info -->
+    <div class="card info-panel">
+      <div class="problem-title">{{ problem.title }}</div>
+
+      <div class="meta-row">
+        <span class="diff-badge diff-{{ problem.difficulty|lower }}">{{ problem.difficulty }}</span>
+        <span class="company-badge">{{ problem.company }}</span>
+        <span style="font-size:0.8rem; color:#888;">{{ problem.recency }}</span>
+      </div>
+
+      <a href="{{ problem.leetcode_url }}" target="_blank" class="btn btn-primary btn-sm" style="margin-bottom:1rem;">
+        Open on LeetCode
+      </a>
+
+      <div class="stat-row">
+        <div class="stat-item">
+          <div class="val">{{ "%.1f"|format(problem.frequency) }}</div>
+          <div class="lbl">Frequency</div>
+        </div>
+        <div class="stat-item">
+          <div class="val">{{ "%.1f%%"|format(problem.acceptance_rate * 100) }}</div>
+          <div class="lbl">Acceptance</div>
+        </div>
+      </div>
+
+      {% if problem.topics %}
+      <div class="section-label">Topics</div>
+      <div>
+        {% for topic in problem.topics.split(',') %}
+        <span class="topic-tag">{{ topic.strip() }}</span>
+        {% endfor %}
+      </div>
+      {% endif %}
+    </div>
+
+    <!-- Right: Practice panel -->
+    <div class="card practice-panel">
+      <h2>Practice</h2>
+
+      <div class="section-label">Status</div>
+      <div class="status-btns">
+        <button class="status-btn {% if (practice and practice.status == 'unsolved') or not practice %}active-unsolved{% endif %}"
+                onclick="setStatus('unsolved', this)">Unsolved</button>
+        <button class="status-btn {% if practice and practice.status == 'attempted' %}active-attempted{% endif %}"
+                onclick="setStatus('attempted', this)">Attempted</button>
+        <button class="status-btn {% if practice and practice.status == 'solved' %}active-solved{% endif %}"
+                onclick="setStatus('solved', this)">Solved</button>
+      </div>
+
+      <div class="section-label">Your Solution</div>
+      <textarea id="solution" class="code-area" placeholder="Paste your solution code here...">{% if practice and practice.user_solution %}{{ practice.user_solution }}{% endif %}</textarea>
+
+      <div class="section-label">Notes</div>
+      <textarea id="notes" class="notes-area" placeholder="Personal notes...">{% if practice and practice.notes %}{{ practice.notes }}{% endif %}</textarea>
+
+      <button class="btn btn-success" style="width:100%; justify-content:center; margin-top:0.75rem;" onclick="savePractice()">
+        Save Progress
+      </button>
+
+      <div class="section-label" style="margin-top:1.5rem;">AI Assistant</div>
+      <div class="ai-tools">
+        <button class="btn btn-outline btn-sm" onclick="getHint('hint')">Get Hint</button>
+        <button class="btn btn-outline btn-sm" onclick="getHint('approach')">Explain Approach</button>
+        <button class="btn btn-outline btn-sm" onclick="getHint('review')">Review Solution</button>
+      </div>
+      <div id="ai-response" class="ai-response"></div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const PROBLEM_ID = {{ problem.id }};
+let currentStatus = '{{ practice.status if practice else "unsolved" }}';
+
+function setStatus(status, btn) {
+  currentStatus = status;
+  // Update button styles
+  document.querySelectorAll('.status-btn').forEach(b => {
+    b.className = 'status-btn';
+  });
+  btn.classList.add('active-' + status);
+}
+
+async function savePractice() {
+  const solution = document.getElementById('solution').value;
+  const notes = document.getElementById('notes').value;
+  try {
+    await apiPost(`/api/interview/problems/${PROBLEM_ID}/status`, {
+      status: currentStatus,
+      user_solution: solution,
+      notes: notes,
+    });
+    flash('Progress saved!', 'success');
+  } catch(e) {
+    flash(e.message, 'error');
+  }
+}
+
+async function getHint(hintType) {
+  const responseDiv = document.getElementById('ai-response');
+  responseDiv.textContent = 'Thinking... (may take 30-60s)';
+  responseDiv.classList.add('visible');
+
+  const solution = document.getElementById('solution').value;
+  try {
+    const result = await apiPost(`/api/interview/problems/${PROBLEM_ID}/hint`, {
+      hint_type: hintType,
+      user_solution: solution || null,
+    });
+    responseDiv.textContent = result.response;
+    flash('AI response ready!', 'success');
+  } catch(e) {
+    responseDiv.textContent = 'Error: ' + e.message;
+    flash(e.message, 'error');
+  }
+}
+</script>
+{% endblock %}

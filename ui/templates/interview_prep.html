@@ -1,0 +1,256 @@
+{% extends "base.html" %}
+
+{% block title %}Interview Prep — Job Hunter{% endblock %}
+
+{% block head %}
+<style>
+  .prep-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.25rem;
+  }
+  .prep-header h1 { font-size: 1.4rem; font-weight: 700; }
+
+  .stats-bar {
+    display: flex;
+    gap: 1.5rem;
+    margin-bottom: 1.25rem;
+    flex-wrap: wrap;
+  }
+  .stat-card {
+    background: white;
+    border-radius: 10px;
+    padding: 0.75rem 1.25rem;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    text-align: center;
+    min-width: 100px;
+  }
+  .stat-value { font-size: 1.5rem; font-weight: 800; }
+  .stat-label { font-size: 0.75rem; color: #888; text-transform: uppercase; letter-spacing: 0.3px; }
+  .stat-green { color: #2e7d32; }
+  .stat-orange { color: #f57f17; }
+  .stat-blue { color: #1565c0; }
+
+  .filter-row {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+    margin-bottom: 1rem;
+    align-items: center;
+  }
+  .filter-label {
+    font-size: 0.8rem;
+    font-weight: 700;
+    color: #666;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    margin-right: 0.25rem;
+  }
+  .filter-pill {
+    display: inline-block;
+    padding: 4px 14px;
+    border-radius: 16px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    text-decoration: none;
+    border: 2px solid #ddd;
+    color: #555;
+    background: white;
+    transition: all 0.2s;
+  }
+  .filter-pill:hover { border-color: #1976d2; color: #1976d2; }
+  .filter-pill.active { border-color: #1976d2; background: #e3f2fd; color: #1565c0; }
+
+  .filter-sep {
+    width: 1px;
+    height: 24px;
+    background: #ddd;
+    margin: 0 0.5rem;
+  }
+
+  /* ── Problem table ── */
+  .problem-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+  .problem-table th {
+    text-align: left;
+    padding: 10px 14px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+    color: #888;
+    background: #fafafa;
+    border-bottom: 2px solid #eee;
+  }
+  .problem-table td {
+    padding: 10px 14px;
+    font-size: 0.85rem;
+    border-bottom: 1px solid #f0f0f0;
+    color: #333;
+  }
+  .problem-table tr:hover td { background: #f8f9ff; }
+  .problem-table a { color: #1976d2; text-decoration: none; font-weight: 600; }
+  .problem-table a:hover { text-decoration: underline; }
+
+  .diff-easy { color: #2e7d32; font-weight: 700; }
+  .diff-medium { color: #f57f17; font-weight: 700; }
+  .diff-hard { color: #c62828; font-weight: 700; }
+
+  .status-pill {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 10px;
+    font-size: 0.7rem;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+  .status-unsolved { background: #f5f5f5; color: #999; }
+  .status-attempted { background: #fff9c4; color: #f57f17; }
+  .status-solved { background: #c8e6c9; color: #2e7d32; }
+
+  .topics-cell {
+    max-width: 200px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 3rem;
+    color: #888;
+  }
+  .empty-state p { margin-bottom: 1rem; font-size: 1rem; }
+</style>
+{% endblock %}
+
+{% macro filter_url(company=active_company, difficulty=active_difficulty, recency=active_recency, status=active_status) -%}
+{%- set parts = [] -%}
+{%- if company %}{% set _ = parts.append("company=" + company) %}{% endif -%}
+{%- if difficulty %}{% set _ = parts.append("difficulty=" + difficulty) %}{% endif -%}
+{%- if recency %}{% set _ = parts.append("recency=" + recency) %}{% endif -%}
+{%- if status %}{% set _ = parts.append("status=" + status) %}{% endif -%}
+/interview-prep{% if parts %}?{{ parts|join("&") }}{% endif %}
+{%- endmacro %}
+
+{% block content %}
+<div class="container">
+  <div class="prep-header">
+    <h1>Interview Prep</h1>
+    <button class="btn btn-primary" onclick="importProblems()">Import Problems</button>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats-bar">
+    <div class="stat-card">
+      <div class="stat-value stat-blue">{{ stats.total }}</div>
+      <div class="stat-label">Total</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value stat-green">{{ stats.solved }}</div>
+      <div class="stat-label">Solved</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value stat-orange">{{ stats.attempted }}</div>
+      <div class="stat-label">Attempted</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-value">{{ stats.unsolved }}</div>
+      <div class="stat-label">Unsolved</div>
+    </div>
+  </div>
+
+  <!-- Filters -->
+  <div class="filter-row">
+    <span class="filter-label">Company:</span>
+    <a href="{{ filter_url(company=None) }}" class="filter-pill {% if not active_company %}active{% endif %}">All</a>
+    {% for c in companies %}
+    <a href="{{ filter_url(company=c) }}" class="filter-pill {% if active_company == c %}active{% endif %}">{{ c }}</a>
+    {% endfor %}
+
+    <div class="filter-sep"></div>
+    <span class="filter-label">Difficulty:</span>
+    <a href="{{ filter_url(difficulty=None) }}" class="filter-pill {% if not active_difficulty %}active{% endif %}">All</a>
+    <a href="{{ filter_url(difficulty='Easy') }}" class="filter-pill {% if active_difficulty == 'Easy' %}active{% endif %}">Easy</a>
+    <a href="{{ filter_url(difficulty='Medium') }}" class="filter-pill {% if active_difficulty == 'Medium' %}active{% endif %}">Medium</a>
+    <a href="{{ filter_url(difficulty='Hard') }}" class="filter-pill {% if active_difficulty == 'Hard' %}active{% endif %}">Hard</a>
+
+    <div class="filter-sep"></div>
+    <span class="filter-label">Recency:</span>
+    <a href="{{ filter_url(recency=None) }}" class="filter-pill {% if not active_recency %}active{% endif %}">All</a>
+    <a href="{{ filter_url(recency='30d') }}" class="filter-pill {% if active_recency == '30d' %}active{% endif %}">30 days</a>
+    <a href="{{ filter_url(recency='90d') }}" class="filter-pill {% if active_recency == '90d' %}active{% endif %}">90 days</a>
+    <a href="{{ filter_url(recency='6m') }}" class="filter-pill {% if active_recency == '6m' %}active{% endif %}">6 months</a>
+
+    <div class="filter-sep"></div>
+    <span class="filter-label">Status:</span>
+    <a href="{{ filter_url(status=None) }}" class="filter-pill {% if not active_status %}active{% endif %}">All</a>
+    <a href="{{ filter_url(status='unsolved') }}" class="filter-pill {% if active_status == 'unsolved' %}active{% endif %}">Unsolved</a>
+    <a href="{{ filter_url(status='attempted') }}" class="filter-pill {% if active_status == 'attempted' %}active{% endif %}">Attempted</a>
+    <a href="{{ filter_url(status='solved') }}" class="filter-pill {% if active_status == 'solved' %}active{% endif %}">Solved</a>
+  </div>
+
+  <!-- Problem list -->
+  {% if problems %}
+  <table class="problem-table">
+    <thead>
+      <tr>
+        <th>Difficulty</th>
+        <th>Title</th>
+        <th>Frequency</th>
+        <th>Acceptance</th>
+        <th>Topics</th>
+        <th>Company</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for item in problems %}
+      {% set p = item.problem %}
+      {% set s = item.status %}
+      <tr>
+        <td>
+          <span class="diff-{{ p.difficulty|lower }}">{{ p.difficulty }}</span>
+        </td>
+        <td>
+          <a href="/interview-prep/problem/{{ p.id }}">{{ p.title }}</a>
+        </td>
+        <td>{{ "%.1f"|format(p.frequency) }}</td>
+        <td>{{ "%.1f%%"|format(p.acceptance_rate * 100) }}</td>
+        <td class="topics-cell" title="{{ p.topics }}">{{ p.topics }}</td>
+        <td>{{ p.company }}</td>
+        <td><span class="status-pill status-{{ s }}">{{ s }}</span></td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  {% else %}
+  <div class="card empty-state">
+    <p>No problems found.</p>
+    <button class="btn btn-primary" onclick="importProblems()">Import Problems from GitHub</button>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+async function importProblems() {
+  flash('Importing problems from GitHub... this may take a minute.', 'info');
+  try {
+    const result = await apiPost('/api/interview/import');
+    flash(result.message || 'Import started!', 'success');
+    setTimeout(() => location.reload(), 5000);
+  } catch(e) {
+    flash(e.message, 'error');
+  }
+}
+</script>
+{% endblock %}

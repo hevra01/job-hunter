@@ -18,7 +18,8 @@
       "Bash(file *)",
       "Bash(pwd)",
       "Bash(which *)",
-      "Bash(echo *)"
+      "Bash(echo *)",
+      "Bash(cd *)"
     ]
   },
   "hooks": {
