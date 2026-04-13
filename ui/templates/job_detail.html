@@ -229,6 +229,9 @@
           id="cover-letter"
           class="cover-letter-area"
           placeholder="Write your cover letter here...">{% if application %}{{ application.edited_cover_letter or application.cover_letter }}{% endif %}</textarea>
+        <button class="btn btn-outline btn-sm" onclick="regenerateCoverLetter()" style="margin-top:0.5rem;">
+          Regenerate with AI
+        </button>
 
         <div class="section-label">Attachments</div>
         <div class="attachments-row">
@@ -330,6 +333,18 @@ async function rejectJob() {
     await apiPost(`/api/jobs/${JOB_ID}/reject`);
     flash('Job rejected', 'info');
     setTimeout(() => location.href = '/', 1000);
+  } catch(e) {
+    flash(e.message, 'error');
+  }
+}
+
+async function regenerateCoverLetter() {
+  if (!confirm('Regenerate cover letter using AI? This replaces the current text.')) return;
+  flash('Generating cover letter with AI... (may take 30-60s)', 'info');
+  try {
+    const result = await apiPost(`/api/jobs/${JOB_ID}/cover-letter`);
+    document.getElementById('cover-letter').value = result.cover_letter;
+    flash('Cover letter generated!', 'success');
   } catch(e) {
     flash(e.message, 'error');
   }

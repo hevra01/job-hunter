@@ -33,6 +33,9 @@ targets:
     - "senior director"
     - "VP of"
 
+github_username: "hevra01"
+use_ai_cover_letter: true  # true = use Claude CLI for cover letters, false = use template
+
 scraping_interval: "24h"  # how often to run scrapers: 6h, 12h, 24h
 
 attachments:

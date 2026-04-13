@@ -310,6 +310,31 @@ def mark_applied(job_id: int, session: Session = Depends(get_session)):
     return {"status": "applied", "job_id": job_id}
 
 
+@app.post("/api/jobs/{job_id}/cover-letter")
+def regenerate_cover_letter(job_id: int, session: Session = Depends(get_session)):
+    """Regenerate cover letter using Claude CLI."""
+    from ai.cover_letter import generate_cover_letter
+
+    job = get_job(session, job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    application = get_application(session, job_id)
+    if not application:
+        raise HTTPException(status_code=400, detail="No application found")
+
+    cover_letter = generate_cover_letter(
+        title=job.title,
+        organization=job.organization,
+        description=job.description,
+        job_type=job.job_type,
+    )
+    application.cover_letter = cover_letter
+    application.edited_cover_letter = None
+    session.add(application)
+    session.commit()
+    return {"cover_letter": cover_letter}
+
+
 @app.post("/api/scrape")
 def trigger_scrape():
     """Manually trigger a discovery run (runs in background thread)."""
