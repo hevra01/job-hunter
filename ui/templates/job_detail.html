@@ -1,0 +1,357 @@
+{% extends "base.html" %}
+
+{% block title %}{{ job.title }} — Job Hunter{% endblock %}
+
+{% block head %}
+<style>
+  .detail-layout {
+    display: grid;
+    grid-template-columns: 1fr 420px;
+    gap: 1.5rem;
+    align-items: start;
+  }
+  @media (max-width: 900px) {
+    .detail-layout { grid-template-columns: 1fr; }
+  }
+
+  .back-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    color: #666;
+    text-decoration: none;
+    font-size: 0.875rem;
+    margin-bottom: 1rem;
+  }
+  .back-link:hover { color: #1976d2; }
+
+  /* ── Job info panel ── */
+  .info-panel { padding: 1.5rem; }
+  .info-header { display: flex; gap: 1rem; align-items: flex-start; margin-bottom: 1.5rem; }
+  .job-title-large { font-size: 1.4rem; font-weight: 700; line-height: 1.3; }
+  .job-org-large   { font-size: 1rem; color: #555; margin-top: 4px; }
+  .job-meta { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 1rem; }
+
+  .section-label {
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    color: #888;
+    margin-bottom: 0.5rem;
+    margin-top: 1.25rem;
+  }
+
+  .reasoning-box {
+    background: #f8f9ff;
+    border-left: 3px solid #1976d2;
+    padding: 0.75rem 1rem;
+    border-radius: 0 8px 8px 0;
+    font-size: 0.875rem;
+    color: #444;
+    line-height: 1.6;
+  }
+
+  .description-box {
+    background: #fafafa;
+    border: 1px solid #eee;
+    border-radius: 8px;
+    padding: 1rem;
+    font-size: 0.85rem;
+    color: #444;
+    line-height: 1.7;
+    max-height: 400px;
+    overflow-y: auto;
+    white-space: pre-wrap;
+    word-break: break-word;
+  }
+
+  /* ── Action panel ── */
+  .action-panel { padding: 1.5rem; position: sticky; top: 72px; }
+  .action-panel h2 { font-size: 1rem; font-weight: 700; margin-bottom: 1rem; }
+
+  .cover-letter-area {
+    width: 100%;
+    min-height: 320px;
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 0.75rem;
+    font-size: 0.85rem;
+    line-height: 1.7;
+    font-family: inherit;
+    resize: vertical;
+    color: #333;
+    transition: border-color 0.2s;
+  }
+  .cover-letter-area:focus { outline: none; border-color: #1976d2; }
+
+  .attachments-row {
+    display: flex;
+    gap: 0.75rem;
+    margin: 0.75rem 0;
+    flex-wrap: wrap;
+  }
+  .attach-toggle {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 0.825rem;
+    user-select: none;
+    transition: all 0.2s;
+  }
+  .attach-toggle.active { border-color: #388e3c; color: #388e3c; background: #f1f8f1; }
+
+  .send-method-row { margin: 0.75rem 0; font-size: 0.875rem; }
+  .send-method-row label { display: flex; align-items: center; gap: 6px; margin-bottom: 4px; cursor: pointer; }
+
+  .action-btns {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 0.5rem;
+    margin-top: 1rem;
+  }
+  .action-btns .btn { justify-content: center; }
+  .btn-full { grid-column: 1 / -1; }
+
+  .sent-badge {
+    text-align: center;
+    padding: 1rem;
+    background: #e8f5e9;
+    border-radius: 8px;
+    color: #2e7d32;
+    font-weight: 600;
+    font-size: 0.9rem;
+  }
+
+  .manual-badge {
+    text-align: center;
+    padding: 1rem;
+    background: #fff8e1;
+    border-radius: 8px;
+    color: #e65100;
+    font-weight: 600;
+    font-size: 0.85rem;
+    line-height: 1.5;
+  }
+
+.score-big {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-bottom: 0.5rem;
+  }
+  .score-circle {
+    width: 56px;
+    height: 56px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.1rem;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <a href="/" class="back-link">← Back to queue</a>
+
+  <div class="detail-layout">
+    <!-- Left: Job info -->
+    <div class="card info-panel">
+      <div class="info-header">
+        {% set score = job.relevance_score %}
+        {% set score_class = 'score-high' if score >= 75 else ('score-medium' if score >= 50 else 'score-low') %}
+        <div class="score-circle score-badge {{ score_class }}">{{ score }}</div>
+        <div>
+          <div class="job-title-large">{{ job.title }}</div>
+          <div class="job-org-large">{{ job.organization }}</div>
+        </div>
+      </div>
+
+      <div class="job-meta">
+        <span class="pill pill-{{ job.status }}">{{ job.status }}</span>
+        <span class="type-tag">{{ job.job_type.replace('_', ' ') }}</span>
+        <span class="source-tag">{{ job.source }}</span>
+        {% if job.application_method == 'email' %}
+        <span style="font-size:0.78rem; background:#e8f5e9; color:#2e7d32; padding:2px 8px; border-radius:10px;">✉ Email</span>
+        {% else %}
+        <span style="font-size:0.78rem; background:#f3e5f5; color:#6a1b9a; padding:2px 8px; border-radius:10px;">📋 Form</span>
+        {% endif %}
+      </div>
+
+      <a href="{{ job.url }}" target="_blank" style="font-size:0.8rem; color:#1976d2; word-break:break-all;">
+        {{ job.url }}
+      </a>
+
+      {% if job.contact_email %}
+      <div class="section-label">Contact</div>
+      <div style="font-size:0.875rem;">{{ job.contact_email }}</div>
+      {% endif %}
+
+      <div class="section-label">Why this matches you</div>
+      <div class="reasoning-box">{{ job.relevance_reasoning }}</div>
+
+      <div class="section-label">Job Description</div>
+      <div class="description-box">{{ job.description }}</div>
+    </div>
+
+    <!-- Right: Action panel -->
+    <div class="card action-panel">
+      {% if job.status == 'applied' %}
+        <div class="sent-badge">
+          ✓ Application sent<br>
+          <span style="font-weight:400; font-size:0.8rem;">
+            {% if application and application.sent_at %}{{ application.sent_at.strftime('%Y-%m-%d %H:%M') }}{% endif %}
+          </span>
+        </div>
+
+      {% elif application and application.send_status == 'manual' %}
+        <div class="manual-badge">
+          ⚠ Requires manual application<br>
+          <span style="font-weight:400; font-size:0.8rem;">{{ application.notes }}</span>
+          <br><a href="{{ job.url }}" target="_blank" class="btn btn-primary btn-sm" style="margin-top:0.75rem; display:inline-flex;">Open job page</a>
+        </div>
+
+      {% else %}
+        <h2>Application Draft</h2>
+
+        <div class="section-label">Cover Letter</div>
+
+        <textarea
+          id="cover-letter"
+          class="cover-letter-area"
+          placeholder="Write your cover letter here...">{% if application %}{{ application.edited_cover_letter or application.cover_letter }}{% endif %}</textarea>
+
+        <div class="section-label">Attachments</div>
+        <div class="attachments-row">
+          <div class="attach-toggle active" id="toggle-cv" onclick="toggleAttachment('cv')">
+            📄 CV
+          </div>
+          {% if has_rec_letter %}
+          <div class="attach-toggle {% if application and application.include_recommendation %}active{% endif %}"
+               id="toggle-rec" onclick="toggleAttachment('rec')">
+            📝 Rec Letter
+          </div>
+          {% endif %}
+        </div>
+
+        {% if job.application_method == 'email' and job.contact_email %}
+        <div class="send-method-row">
+          <strong>Send via:</strong>
+          <label>
+            <input type="radio" name="send_method" value="email" checked>
+            Email ({{ job.contact_email }})
+          </label>
+          <label>
+            <input type="radio" name="send_method" value="form">
+            Form (browser automation)
+          </label>
+          <label>
+            <input type="radio" name="send_method" value="manual">
+            Mark as manual
+          </label>
+        </div>
+        {% elif job.application_method == 'form' %}
+        <div class="send-method-row" style="color:#555;">
+          <strong>Send via:</strong> Online form (Playwright)
+          <label style="margin-top:4px;">
+            <input type="radio" name="send_method" value="manual">
+            Mark as manual instead
+          </label>
+        </div>
+        {% endif %}
+
+        <div class="action-btns">
+          {% if job.status != 'approved' %}
+          <button class="btn btn-success" onclick="approveJob()">✓ Approve</button>
+          <button class="btn btn-danger" onclick="rejectJob()">✗ Reject</button>
+          {% else %}
+          <button class="btn btn-primary btn-full" onclick="sendApplication()">
+            ▶ Send Application
+          </button>
+          <button class="btn btn-outline" onclick="rejectJob()">✗ Reject</button>
+          <button class="btn btn-outline" onclick="approveJob()">↑ Update draft</button>
+          {% endif %}
+        </div>
+      {% endif %}
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const JOB_ID = {{ job.id }};
+let includeCV = true;
+let includeRec = {{ 'true' if application and application.include_recommendation else 'false' }};
+
+function toggleAttachment(type) {
+  if (type === 'cv') {
+    includeCV = !includeCV;
+    document.getElementById('toggle-cv').classList.toggle('active', includeCV);
+  } else {
+    includeRec = !includeRec;
+    document.getElementById('toggle-rec')?.classList.toggle('active', includeRec);
+  }
+}
+
+function getSendMethod() {
+  const el = document.querySelector('input[name="send_method"]:checked');
+  return el ? el.value : null;
+}
+
+async function approveJob() {
+  const coverLetter = document.getElementById('cover-letter')?.value;
+  try {
+    await apiPost(`/api/jobs/${JOB_ID}/approve`, {
+      cover_letter: coverLetter,
+      include_cv: includeCV,
+      include_recommendation: includeRec,
+      send_method: getSendMethod(),
+    });
+    flash('Job approved! Click "Send Application" when ready.', 'success');
+    setTimeout(() => location.reload(), 1200);
+  } catch(e) {
+    flash(e.message, 'error');
+  }
+}
+
+async function rejectJob() {
+  if (!confirm('Reject this job?')) return;
+  try {
+    await apiPost(`/api/jobs/${JOB_ID}/reject`);
+    flash('Job rejected', 'info');
+    setTimeout(() => location.href = '/', 1000);
+  } catch(e) {
+    flash(e.message, 'error');
+  }
+}
+
+async function sendApplication() {
+  if (!confirm('Send this application now?')) return;
+  flash('Sending application...', 'info');
+  try {
+    const result = await apiPost(`/api/jobs/${JOB_ID}/send`);
+    if (result.success) {
+      flash('Application sent!', 'success');
+      setTimeout(() => location.reload(), 1500);
+    } else if (result.needs_manual) {
+      flash(`Manual application needed: ${result.message}`, 'error');
+      setTimeout(() => location.reload(), 2000);
+    } else {
+      flash(`Send failed: ${result.message}`, 'error');
+    }
+  } catch(e) {
+    flash(e.message, 'error');
+  }
+}
+
+</script>
+{% endblock %}

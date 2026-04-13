@@ -1,0 +1,151 @@
+user:
+  name: "Hevra Petekkaya"
+  email: "hevrapetekkaya01@gmail.com"
+  phone: "+49 17632086462"
+  location: "Saarbrücken, Germany"
+
+targets:
+  position_types:
+    - phd
+    - research_scientist
+    - ml_engineer
+    - postdoc
+  keywords:
+    - computer vision
+    - generative AI
+    - generative models
+    - explainable AI
+    - diffusion models
+    - transformers
+    - representation learning
+    - deep learning
+    - machine learning
+    - image generation
+    - scene understanding
+  locations:
+    - Germany
+    - Europe
+    - Remote
+  min_relevance_score: 60
+  exclude_keywords:
+    - "10+ years"
+    - "15+ years"
+    - "senior director"
+    - "VP of"
+
+scraping_interval: "24h"  # how often to run scrapers: 6h, 12h, 24h
+
+attachments:
+  cv: "assets/cv.pdf"
+  recommendation_letter: "assets/recommendation.pdf"  # attached only for PhD/postdoc
+
+# Academic job boards to scrape
+academic_boards:
+  euraxess:
+    enabled: true
+    search_terms:
+      - "machine learning"
+      - "computer vision"
+      - "deep learning"
+  academic_positions:
+    enabled: true
+    search_terms:
+      - "machine learning"
+      - "computer vision"
+  jobs_ac_uk:
+    enabled: true
+    search_terms:
+      - "machine learning"
+      - "computer vision"
+
+# Specific labs to monitor (add/remove as needed)
+labs:
+  - name: "MPI for Informatics"
+    url: "https://www.mpi-inf.mpg.de"
+    openings_url: "https://www.mpi-inf.mpg.de/careers"
+    js_required: false
+
+  - name: "MPI for Intelligent Systems"
+    url: "https://is.mpg.de"
+    openings_url: "https://is.mpg.de/jobs"
+    js_required: false
+
+  - name: "ETH Zurich Computer Vision Lab"
+    url: "https://vision.ee.ethz.ch"
+    openings_url: "https://vision.ee.ethz.ch/research/open-positions.html"
+    js_required: false
+
+  - name: "Oxford Visual Geometry Group"
+    url: "https://www.robots.ox.ac.uk/~vgg"
+    openings_url: "https://www.robots.ox.ac.uk/~vgg/vacancies/"
+    js_required: false
+
+  - name: "TU Munich Computer Vision"
+    url: "https://www.cs.cit.tum.de/cv/home/"
+    openings_url: "https://www.cs.cit.tum.de/cv/open-positions/"
+    js_required: false
+
+  - name: "Amsterdam Machine Learning Lab"
+    url: "https://amlab.science.uva.nl"
+    openings_url: "https://amlab.science.uva.nl/jobs/"
+    js_required: false
+
+  - name: "EPFL Computer Vision Lab"
+    url: "https://www.epfl.ch/labs/cvlab/"
+    openings_url: "https://www.epfl.ch/labs/cvlab/open-positions/"
+    js_required: false
+
+# Industry/company career pages
+companies:
+  - name: "Google DeepMind"
+    careers_url: "https://deepmind.google/careers/"
+    portal: "greenhouse"
+    greenhouse_board: "deepmind"
+    search_terms:
+      - "research scientist"
+      - "machine learning"
+
+  - name: "Meta AI"
+    careers_url: "https://www.metacareers.com/jobs"
+    portal: "meta"
+    search_terms:
+      - "research scientist"
+      - "computer vision"
+
+  - name: "Microsoft Research"
+    careers_url: "https://careers.microsoft.com/v2/global/en/research.html"
+    portal: "microsoft"
+    search_terms:
+      - "research"
+      - "machine learning"
+
+  - name: "Apple Machine Learning"
+    careers_url: "https://jobs.apple.com/en-us/search"
+    portal: "apple"
+    search_terms:
+      - "machine learning"
+      - "computer vision"
+
+  - name: "NVIDIA Research"
+    careers_url: "https://www.nvidia.com/en-us/research/careers/"
+    portal: "generic"
+    search_terms:
+      - "research scientist"
+      - "deep learning"
+
+  - name: "Amazon Robotics"
+    careers_url: "https://www.amazon.jobs/en/departments/robotics"
+    portal: "amazon"
+    search_terms:
+      - "machine learning"
+      - "computer vision"
+
+# LinkedIn search config (requires session cookies)
+linkedin:
+  enabled: false  # set to true after providing cookies
+  search_queries:
+    - "machine learning researcher"
+    - "computer vision engineer"
+    - "AI researcher"
+  location_filter: "Europe"
+  cookies_file: "data/linkedin_cookies.json"

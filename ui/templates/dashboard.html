@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block title %}Review Queue — Job Hunter{% endblock %}
+
+{% block head %}
+<style>
+  .page-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+  }
+  .page-header h1 { font-size: 1.4rem; font-weight: 700; }
+
+  /* ── Status tabs ── */
+  .status-tabs {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+  }
+  .status-tab {
+    padding: 6px 16px;
+    border-radius: 20px;
+    border: 2px solid transparent;
+    font-size: 0.85rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    background: white;
+    color: #555;
+    transition: all 0.2s;
+  }
+  .status-tab:hover { border-color: #1976d2; color: #1976d2; }
+  .status-tab.active { background: #1976d2; color: white; border-color: #1976d2; }
+  .tab-count {
+    background: rgba(255,255,255,0.3);
+    border-radius: 10px;
+    padding: 1px 7px;
+    font-size: 0.75rem;
+    margin-left: 4px;
+  }
+  .status-tab:not(.active) .tab-count { background: #eee; color: #888; }
+
+  /* ── Job grid ── */
+  .jobs-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+    gap: 1rem;
+  }
+
+  .job-card {
+    background: white;
+    border-radius: 12px;
+    border: 2px solid transparent;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    text-decoration: none;
+    color: inherit;
+  }
+  .job-card:hover { border-color: #1976d2; box-shadow: 0 4px 16px rgba(25,118,210,0.15); transform: translateY(-2px); }
+
+  .job-card-header {
+    padding: 1rem 1rem 0.75rem;
+    display: flex;
+    gap: 0.75rem;
+    align-items: flex-start;
+  }
+  .job-card-body { padding: 0 1rem 0.75rem; flex: 1; }
+  .job-card-footer {
+    padding: 0.75rem 1rem;
+    border-top: 1px solid #f0f0f0;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  .job-title { font-size: 0.95rem; font-weight: 700; line-height: 1.3; margin-bottom: 2px; }
+  .job-org   { font-size: 0.85rem; color: #555; }
+  .job-reasoning { font-size: 0.8rem; color: #777; line-height: 1.5; margin-top: 0.5rem; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+
+  .source-tag {
+    font-size: 0.72rem;
+    background: #f0f4ff;
+    color: #3949ab;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-left: auto;
+  }
+
+  .type-tag {
+    font-size: 0.72rem;
+    background: #fff3e0;
+    color: #e65100;
+    padding: 2px 8px;
+    border-radius: 10px;
+  }
+
+  .empty-state {
+    text-align: center;
+    padding: 4rem 2rem;
+    color: #888;
+  }
+  .empty-state h2 { font-size: 1.2rem; margin-bottom: 0.5rem; color: #aaa; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="page-header">
+    <h1>Review Queue</h1>
+    <span style="color:#888; font-size:0.9rem;">Jobs discovered and scored by Claude</span>
+  </div>
+
+  <!-- Status tabs -->
+  <div class="status-tabs">
+    {% for tab_status, label in [('queued', 'Pending Review'), ('approved', 'Approved'), ('applied', 'Applied'), ('rejected', 'Rejected'), ('all', 'All')] %}
+    <a href="/?status={{ tab_status }}"
+       class="status-tab {% if active_status == tab_status %}active{% endif %}">
+      {{ label }}
+      <span class="tab-count">{{ counts[tab_status] }}</span>
+    </a>
+    {% endfor %}
+  </div>
+
+  <!-- Job cards -->
+  {% if jobs %}
+  <div class="jobs-grid">
+    {% for job in jobs %}
+    {% set score = job.relevance_score %}
+    {% set score_class = 'score-high' if score >= 75 else ('score-medium' if score >= 50 else 'score-low') %}
+    <a class="job-card" href="/job/{{ job.id }}">
+      <div class="job-card-header">
+        <div class="score-badge {{ score_class }}">{{ score }}</div>
+        <div style="flex:1; min-width:0;">
+          <div class="job-title">{{ job.title }}</div>
+          <div class="job-org">{{ job.organization }}</div>
+        </div>
+      </div>
+      <div class="job-card-body">
+        <div class="job-reasoning">{{ job.relevance_reasoning }}</div>
+      </div>
+      <div class="job-card-footer">
+        <span class="pill pill-{{ job.status }}">{{ job.status }}</span>
+        <span class="type-tag">{{ job.job_type.replace('_', ' ') }}</span>
+        <span class="source-tag">{{ job.source }}</span>
+      </div>
+    </a>
+    {% endfor %}
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <h2>No jobs here yet</h2>
+    <p>Click "Run Scraper" to discover new openings, or check a different status tab.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
