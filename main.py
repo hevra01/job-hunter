@@ -8,6 +8,7 @@ Endpoints:
   POST /api/jobs/{id}/approve   — approve and queue for sending
   POST /api/jobs/{id}/reject    — reject job
   POST /api/jobs/{id}/send      — actually send the application
+  POST /api/jobs/{id}/mark-applied — confirm manual application
   POST /api/jobs/{id}/cover-letter — regenerate cover letter
   POST /api/scrape              — trigger manual scrape
   GET  /api/stats               — pipeline stats
@@ -287,6 +288,26 @@ def send_application(job_id: int, session: Session = Depends(get_session)):
     session.commit()
     return result
 
+
+@app.post("/api/jobs/{job_id}/mark-applied")
+def mark_applied(job_id: int, session: Session = Depends(get_session)):
+    """Mark a manually-applied job as applied."""
+    job = get_job(session, job_id)
+    if not job:
+        raise HTTPException(status_code=404, detail="Job not found")
+    if job.status != "approved":
+        raise HTTPException(status_code=400, detail="Job must be in approved status")
+    application = get_application(session, job_id)
+    if not application:
+        raise HTTPException(status_code=400, detail="No application found")
+
+    job.status = "applied"
+    application.send_status = "sent"
+    application.sent_at = datetime.utcnow()
+    session.add(job)
+    session.add(application)
+    session.commit()
+    return {"status": "applied", "job_id": job_id}
 
 
 @app.post("/api/scrape")

@@ -217,6 +217,7 @@
           ⚠ Requires manual application<br>
           <span style="font-weight:400; font-size:0.8rem;">{{ application.notes }}</span>
           <br><a href="{{ job.url }}" target="_blank" class="btn btn-primary btn-sm" style="margin-top:0.75rem; display:inline-flex;">Open job page</a>
+          <br><button class="btn btn-success btn-sm" style="margin-top:0.5rem; display:inline-flex;" onclick="markAsApplied()">Mark as Applied</button>
         </div>
 
       {% else %}
@@ -329,6 +330,17 @@ async function rejectJob() {
     await apiPost(`/api/jobs/${JOB_ID}/reject`);
     flash('Job rejected', 'info');
     setTimeout(() => location.href = '/', 1000);
+  } catch(e) {
+    flash(e.message, 'error');
+  }
+}
+
+async function markAsApplied() {
+  if (!confirm('Confirm that you have manually applied for this job?')) return;
+  try {
+    await apiPost(`/api/jobs/${JOB_ID}/mark-applied`);
+    flash('Marked as applied!', 'success');
+    setTimeout(() => location.reload(), 1200);
   } catch(e) {
     flash(e.message, 'error');
   }
