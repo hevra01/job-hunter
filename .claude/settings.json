@@ -1,0 +1,48 @@
+{
+  "permissions": {
+    "allow": [
+      "Read",
+      "Glob",
+      "Grep",
+      "Bash(ls *)",
+      "Bash(cat *)",
+      "Bash(head *)",
+      "Bash(tail *)",
+      "Bash(find *)",
+      "Bash(git status*)",
+      "Bash(git log*)",
+      "Bash(git diff*)",
+      "Bash(git show*)",
+      "Bash(git branch*)",
+      "Bash(wc *)",
+      "Bash(file *)",
+      "Bash(pwd)",
+      "Bash(which *)",
+      "Bash(echo *)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Write|Edit",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "cd /home/hevra/Desktop/projects/after_masters/job_hunter && git add -A && git diff --cached --quiet || git commit -m 'Auto-commit: files updated by Claude Code'"
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "matcher": "Bash",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "bash /home/hevra/Desktop/projects/after_masters/job_hunter/.claude/check_dangerous.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
