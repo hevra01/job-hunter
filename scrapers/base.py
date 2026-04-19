@@ -27,6 +27,7 @@ class RawJob:
     source: str
     application_method: str = "form"   # email | form | unknown
     contact_email: Optional[str] = None
+    company_tier: str = ""  # high | medium | startup | accessible | ""
 
 
 def classify_job_type(title: str, description: str) -> str:

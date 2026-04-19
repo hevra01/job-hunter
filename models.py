@@ -20,6 +20,7 @@ class Job(SQLModel, table=True):
     discovered_at: datetime = Field(default_factory=datetime.utcnow)
     status: str = Field(default="new")
     # new | queued | approved | rejected | applied | archived
+    company_tier: str = Field(default="")  # high | medium | startup | accessible | ""
 
 
 class Application(SQLModel, table=True):

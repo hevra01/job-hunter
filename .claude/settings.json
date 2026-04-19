@@ -29,7 +29,7 @@
         "hooks": [
           {
             "type": "command",
-            "command": "cd /home/hevra/Desktop/projects/after_masters/job_hunter && git add -A && git diff --cached --quiet || git commit -m 'Auto-commit: files updated by Claude Code'"
+            "command": "cd /home/hevra/Desktop/projects/after_masters/job_hunter && git add -A && git diff --cached --quiet || (git commit -m 'Auto-commit: files updated by Claude Code' && git push origin HEAD:$(git rev-parse --abbrev-ref HEAD) 2>/dev/null || true)"
           }
         ]
       }

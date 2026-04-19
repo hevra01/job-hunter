@@ -26,12 +26,13 @@ class LabWebsiteScraper(BaseScraper):
         name = lab["name"]
         openings_url = lab.get("openings_url") or lab["url"]
         js_required = lab.get("js_required", False)
+        tier = lab.get("tier", "high")
 
         if js_required:
-            return self._scrape_with_playwright(name, openings_url)
-        return self._scrape_static(name, openings_url)
+            return self._scrape_with_playwright(name, openings_url, tier)
+        return self._scrape_static(name, openings_url, tier)
 
-    def _scrape_static(self, org_name: str, url: str) -> list[RawJob]:
+    def _scrape_static(self, org_name: str, url: str, tier: str = "high") -> list[RawJob]:
         soup = self.fetch(url)
         if not soup:
             return []
@@ -75,11 +76,12 @@ class LabWebsiteScraper(BaseScraper):
                 source=self.name,
                 application_method="email" if contact_email else "form",
                 contact_email=contact_email,
+                company_tier=tier,
             ))
 
         return jobs
 
-    def _scrape_with_playwright(self, org_name: str, url: str) -> list[RawJob]:
+    def _scrape_with_playwright(self, org_name: str, url: str, tier: str = "high") -> list[RawJob]:
         try:
             from playwright.sync_api import sync_playwright
         except ImportError:
@@ -118,6 +120,7 @@ class LabWebsiteScraper(BaseScraper):
                     description=text,
                     job_type=classify_job_type(text, ""),
                     source=self.name,
+                    company_tier=tier,
                 ))
         except Exception as e:
             logger.error("Playwright scrape failed for %s: %s", org_name, e)

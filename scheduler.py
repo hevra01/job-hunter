@@ -52,6 +52,10 @@ def build_scrapers(cfg: dict) -> list:
     companies = cfg.get("companies", [])
     scrapers.extend(build_company_scrapers(companies))
 
+    startups = cfg.get("startups", [])
+    if startups:
+        scrapers.extend(build_company_scrapers(startups))
+
     li_cfg = cfg.get("linkedin", {})
     if li_cfg.get("enabled", False):
         scrapers.append(LinkedInScraper(
@@ -116,6 +120,7 @@ def run_discovery(config_path: str = "config.yaml") -> dict:
                     application_method=raw.application_method,
                     contact_email=raw.contact_email,
                     status="new" if score < min_score else "queued",
+                    company_tier=raw.company_tier,
                 )
                 session.add(job)
                 session.flush()  # get job.id

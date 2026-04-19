@@ -67,36 +67,43 @@ labs:
     url: "https://www.mpi-inf.mpg.de"
     openings_url: "https://www.mpi-inf.mpg.de/careers"
     js_required: false
+    tier: "high"
 
   - name: "MPI for Intelligent Systems"
     url: "https://is.mpg.de"
     openings_url: "https://is.mpg.de/jobs"
     js_required: false
+    tier: "high"
 
   - name: "ETH Zurich Computer Vision Lab"
     url: "https://vision.ee.ethz.ch"
     openings_url: "https://vision.ee.ethz.ch/research/open-positions.html"
     js_required: false
+    tier: "high"
 
   - name: "Oxford Visual Geometry Group"
     url: "https://www.robots.ox.ac.uk/~vgg"
     openings_url: "https://www.robots.ox.ac.uk/~vgg/vacancies/"
     js_required: false
+    tier: "high"
 
   - name: "TU Munich Computer Vision"
     url: "https://www.cs.cit.tum.de/cv/home/"
     openings_url: "https://www.cs.cit.tum.de/cv/open-positions/"
     js_required: false
+    tier: "high"
 
   - name: "Amsterdam Machine Learning Lab"
     url: "https://amlab.science.uva.nl"
     openings_url: "https://amlab.science.uva.nl/jobs/"
     js_required: false
+    tier: "high"
 
   - name: "EPFL Computer Vision Lab"
     url: "https://www.epfl.ch/labs/cvlab/"
     openings_url: "https://www.epfl.ch/labs/cvlab/open-positions/"
     js_required: false
+    tier: "high"
 
 # Industry/company career pages
 companies:
@@ -104,6 +111,7 @@ companies:
     careers_url: "https://deepmind.google/careers/"
     portal: "greenhouse"
     greenhouse_board: "deepmind"
+    tier: "high"
     search_terms:
       - "research scientist"
       - "machine learning"
@@ -111,6 +119,7 @@ companies:
   - name: "Meta AI"
     careers_url: "https://www.metacareers.com/jobs"
     portal: "meta"
+    tier: "high"
     search_terms:
       - "research scientist"
       - "computer vision"
@@ -118,6 +127,7 @@ companies:
   - name: "Microsoft Research"
     careers_url: "https://careers.microsoft.com/v2/global/en/research.html"
     portal: "microsoft"
+    tier: "medium"
     search_terms:
       - "research"
       - "machine learning"
@@ -125,6 +135,7 @@ companies:
   - name: "Apple Machine Learning"
     careers_url: "https://jobs.apple.com/en-us/search"
     portal: "apple"
+    tier: "medium"
     search_terms:
       - "machine learning"
       - "computer vision"
@@ -132,6 +143,7 @@ companies:
   - name: "NVIDIA Research"
     careers_url: "https://www.nvidia.com/en-us/research/careers/"
     portal: "generic"
+    tier: "medium"
     search_terms:
       - "research scientist"
       - "deep learning"
@@ -139,9 +151,52 @@ companies:
   - name: "Amazon Robotics"
     careers_url: "https://www.amazon.jobs/en/departments/robotics"
     portal: "amazon"
+    tier: "medium"
     search_terms:
       - "machine learning"
       - "computer vision"
+
+# Startups and emerging AI companies
+startups:
+  - name: "Hugging Face"
+    careers_url: "https://huggingface.co/join"
+    portal: "generic"
+    tier: "startup"
+    search_terms:
+      - "machine learning"
+      - "AI"
+
+  - name: "Mistral AI"
+    careers_url: "https://mistral.ai/careers/"
+    portal: "generic"
+    tier: "startup"
+    search_terms:
+      - "machine learning"
+      - "AI"
+
+  - name: "Stability AI"
+    careers_url: "https://stability.ai/careers"
+    portal: "generic"
+    tier: "startup"
+    search_terms:
+      - "machine learning"
+      - "generative"
+
+  - name: "Aleph Alpha"
+    careers_url: "https://www.aleph-alpha.com/careers"
+    portal: "generic"
+    tier: "startup"
+    search_terms:
+      - "machine learning"
+      - "AI"
+
+  - name: "Scale AI"
+    careers_url: "https://scale.com/careers"
+    portal: "generic"
+    tier: "startup"
+    search_terms:
+      - "machine learning"
+      - "AI"
 
 # LinkedIn search config (requires session cookies)
 linkedin:

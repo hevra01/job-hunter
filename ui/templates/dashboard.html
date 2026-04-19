@@ -101,6 +101,45 @@
     border-radius: 10px;
   }
 
+  /* ── Tier filters ── */
+  .tier-filters {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: white;
+    border-radius: 8px;
+  }
+  .tier-filter {
+    padding: 6px 14px;
+    border-radius: 20px;
+    border: 2px solid transparent;
+    font-size: 0.8rem;
+    font-weight: 600;
+    cursor: pointer;
+    text-decoration: none;
+    background: #f0f0f0;
+    color: #555;
+    transition: all 0.2s;
+  }
+  .tier-filter:hover { border-color: #1976d2; color: #1976d2; }
+  .tier-filter.active { background: #1976d2; color: white; border-color: #1976d2; }
+
+  /* ── Tier badge ── */
+  .tier-badge {
+    font-size: 0.65rem;
+    padding: 1px 7px;
+    border-radius: 8px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.3px;
+  }
+  .tier-high { background: #ffe0b2; color: #e65100; }
+  .tier-medium { background: #bbdefb; color: #1565c0; }
+  .tier-startup { background: #c8e6c9; color: #2e7d32; }
+  .tier-accessible { background: #e0e0e0; color: #424242; }
+
   .empty-state {
     text-align: center;
     padding: 4rem 2rem;
@@ -128,6 +167,15 @@
     {% endfor %}
   </div>
 
+  <!-- Tier filters -->
+  <div class="tier-filters">
+    <a href="/?status={{ active_status }}" class="tier-filter {% if not active_tier %}active{% endif %}">All Tiers</a>
+    <a href="/?status={{ active_status }}&tier=high" class="tier-filter {% if active_tier == 'high' %}active{% endif %}">Highly Competitive</a>
+    <a href="/?status={{ active_status }}&tier=medium" class="tier-filter {% if active_tier == 'medium' %}active{% endif %}">Medium</a>
+    <a href="/?status={{ active_status }}&tier=startup" class="tier-filter {% if active_tier == 'startup' %}active{% endif %}">Startups</a>
+    <a href="/?status={{ active_status }}&tier=accessible" class="tier-filter {% if active_tier == 'accessible' %}active{% endif %}">Accessible</a>
+  </div>
+
   <!-- Job cards -->
   {% if jobs %}
   <div class="jobs-grid">
@@ -148,6 +196,9 @@
       <div class="job-card-footer">
         <span class="pill pill-{{ job.status }}">{{ job.status }}</span>
         <span class="type-tag">{{ job.job_type.replace('_', ' ') }}</span>
+        {% if job.company_tier %}
+        <span class="tier-badge tier-{{ job.company_tier }}">{{ job.company_tier }}</span>
+        {% endif %}
         <span class="source-tag">{{ job.source }}</span>
       </div>
     </a>

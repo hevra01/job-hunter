@@ -1,0 +1,236 @@
+{% extends "base.html" %}
+
+{% block title %}Companies by Tier — Job Hunter{% endblock %}
+
+{% block head %}
+<style>
+  .page-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    flex-wrap: wrap;
+  }
+  .page-header h1 { font-size: 1.4rem; font-weight: 700; }
+  .page-header p { color: #666; font-size: 0.9rem; }
+
+  /* ── Tier section ── */
+  .tier-section {
+    background: white;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    overflow: hidden;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+  }
+
+  .tier-header {
+    padding: 1.5rem;
+    border-left: 6px solid transparent;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    transition: background 0.2s;
+  }
+  .tier-header:hover { background: #f9f9f9; }
+
+  .tier-header h2 { font-size: 1.1rem; font-weight: 700; margin: 0; }
+  .tier-header p { margin: 0.25rem 0 0; font-size: 0.85rem; color: #666; }
+
+  .tier-toggle { font-size: 1.2rem; }
+
+  /* Tier colors */
+  .tier-high .tier-header { border-left-color: #ff9800; background: #fff8f5; }
+  .tier-high .tier-header h2 { color: #e65100; }
+
+  .tier-medium .tier-header { border-left-color: #2196f3; background: #f5f9ff; }
+  .tier-medium .tier-header h2 { color: #1565c0; }
+
+  .tier-startup .tier-header { border-left-color: #4caf50; background: #f5fff5; }
+  .tier-startup .tier-header h2 { color: #2e7d32; }
+
+  .tier-accessible .tier-header { border-left-color: #9e9e9e; background: #fafafa; }
+  .tier-accessible .tier-header h2 { color: #424242; }
+
+  .tier-content {
+    padding: 0 1.5rem 1.5rem;
+    max-height: 10000px;
+    overflow: hidden;
+    transition: max-height 0.3s ease;
+  }
+
+  .tier-content.collapsed {
+    max-height: 0;
+    padding: 0 1.5rem;
+  }
+
+  /* ── Company list ── */
+  .companies-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+    gap: 1rem;
+    margin-top: 1rem;
+  }
+
+  .company-card {
+    background: #f9f9f9;
+    border-radius: 8px;
+    padding: 1rem;
+    border: 1px solid #e0e0e0;
+    transition: all 0.2s;
+  }
+  .company-card:hover { border-color: #1976d2; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.08); }
+
+  .company-name {
+    font-weight: 700;
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .job-count {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #1976d2;
+    color: white;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    font-size: 0.8rem;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .company-url {
+    font-size: 0.8rem;
+    color: #666;
+    display: block;
+    margin-bottom: 0.75rem;
+    word-break: break-all;
+  }
+
+  .company-url a {
+    color: #1976d2;
+    text-decoration: none;
+  }
+  .company-url a:hover { text-decoration: underline; }
+
+  .company-jobs {
+    max-height: 200px;
+    overflow-y: auto;
+    font-size: 0.8rem;
+  }
+
+  .job-item {
+    padding: 0.5rem 0;
+    border-top: 1px solid #e8e8e8;
+    display: flex;
+    gap: 0.5rem;
+    align-items: flex-start;
+  }
+
+  .job-item:first-child { border-top: none; }
+
+  .job-item-badge {
+    background: #e3f2fd;
+    color: #1565c0;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-weight: 600;
+    flex-shrink: 0;
+    font-size: 0.7rem;
+  }
+
+  .job-item-title {
+    color: #333;
+    flex: 1;
+  }
+
+  .empty-tier {
+    text-align: center;
+    padding: 2rem;
+    color: #999;
+  }
+  .empty-tier p { margin: 0; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+  <div class="page-header">
+    <div>
+      <h1>Companies by Tier</h1>
+      <p>View job opportunities organized by company competitiveness</p>
+    </div>
+  </div>
+
+  {% if tiers %}
+    {% for tier_key, tier_info in tiers.items() %}
+    <div class="tier-section tier-{{ tier_key }}" data-tier="{{ tier_key }}">
+      <div class="tier-header" onclick="toggleTier(this)">
+        <div>
+          <h2>{{ tier_info.label }}</h2>
+          <p>{{ tier_info.description }}</p>
+        </div>
+        <div class="tier-toggle">▼</div>
+      </div>
+      <div class="tier-content">
+        {% if tier_info.companies %}
+        <div class="companies-grid">
+          {% for company_name, company_data in tier_info.companies %}
+          <div class="company-card">
+            <div class="company-name">
+              {{ company_name }}
+              {% if company_data.count > 0 %}
+              <span class="job-count">{{ company_data.count }}</span>
+              {% endif %}
+            </div>
+            <div class="company-url">
+              <a href="{{ company_data.url }}" target="_blank" rel="noopener">View careers →</a>
+            </div>
+            {% if company_data.jobs %}
+            <div class="company-jobs">
+              {% for job in company_data.jobs[:5] %}
+              <div class="job-item">
+                <span class="job-item-badge">{{ job.relevance_score }}</span>
+                <a href="/job/{{ job.id }}" class="job-item-title">{{ job.title }}</a>
+              </div>
+              {% endfor %}
+              {% if company_data.jobs|length > 5 %}
+              <div style="padding: 0.5rem 0; color: #999; font-size: 0.75rem;">
+                +{{ company_data.jobs|length - 5 }} more
+              </div>
+              {% endif %}
+            </div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% else %}
+        <div class="empty-tier">
+          <p>No companies in this tier yet</p>
+        </div>
+        {% endif %}
+      </div>
+    </div>
+    {% endfor %}
+  {% else %}
+  <div style="text-align: center; padding: 4rem 2rem; color: #888;">
+    <p>No jobs discovered yet. <a href="/" style="color: #1976d2;">Check the queue</a> or run the scraper to discover opportunities.</p>
+  </div>
+  {% endif %}
+</div>
+
+<script>
+function toggleTier(headerEl) {
+  const content = headerEl.nextElementSibling;
+  const toggle = headerEl.querySelector('.tier-toggle');
+  content.classList.toggle('collapsed');
+  toggle.style.transform = content.classList.contains('collapsed') ? 'rotate(-90deg)' : 'rotate(0deg)';
+  toggle.style.transition = 'transform 0.2s ease';
+}
+</script>
+{% endblock %}

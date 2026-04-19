@@ -14,10 +14,11 @@ class GreenhouseScraper(BaseScraper):
     name = "greenhouse"
     API = "https://boards-api.greenhouse.io/v1/boards/{board}/jobs?content=true"
 
-    def __init__(self, company_name: str, board_id: str, keywords: list[str]):
+    def __init__(self, company_name: str, board_id: str, keywords: list[str], company_tier: str = ""):
         self.company_name = company_name
         self.board_id = board_id
         self.keywords = [k.lower() for k in keywords]
+        self.company_tier = company_tier
 
     def scrape(self) -> list[RawJob]:
         try:
@@ -46,6 +47,7 @@ class GreenhouseScraper(BaseScraper):
                 job_type=classify_job_type(title, description),
                 source=f"greenhouse:{self.board_id}",
                 application_method="form",
+                company_tier=self.company_tier,
             ))
 
         return jobs
@@ -58,8 +60,9 @@ class MetaAIScraper(BaseScraper):
         "https://www.metacareers.com/graphql"
     )
 
-    def __init__(self, keywords: list[str]):
+    def __init__(self, keywords: list[str], company_tier: str = ""):
         self.keywords = keywords
+        self.company_tier = company_tier
 
     def scrape(self) -> list[RawJob]:
         # Meta's careers page requires JS; fall back to static search API
@@ -90,6 +93,7 @@ class MetaAIScraper(BaseScraper):
                         job_type=classify_job_type(title, ""),
                         source=self.name,
                         application_method="form",
+                        company_tier=self.company_tier,
                     ))
             except Exception as e:
                 logger.debug("[meta_ai] %s: %s", keyword, e)
@@ -104,8 +108,9 @@ class MicrosoftResearchScraper(BaseScraper):
         "?q={query}&lc=United+States,United+Kingdom,Germany,Netherlands,France&l=en_us&pgNum={page}"
     )
 
-    def __init__(self, keywords: list[str]):
+    def __init__(self, keywords: list[str], company_tier: str = ""):
         self.keywords = keywords
+        self.company_tier = company_tier
 
     def scrape(self) -> list[RawJob]:
         jobs = []
@@ -133,6 +138,7 @@ class MicrosoftResearchScraper(BaseScraper):
                         job_type=classify_job_type(title, ""),
                         source=self.name,
                         application_method="form",
+                        company_tier=self.company_tier,
                     ))
 
         return jobs
@@ -142,8 +148,9 @@ class NvidiaResearchScraper(BaseScraper):
     name = "nvidia_research"
     SEARCH_URL = "https://nvidia.wd5.myworkdayjobs.com/wday/cxs/nvidia/NVIDIAExternalCareerSite/jobs"
 
-    def __init__(self, keywords: list[str]):
+    def __init__(self, keywords: list[str], company_tier: str = ""):
         self.keywords = keywords
+        self.company_tier = company_tier
 
     def scrape(self) -> list[RawJob]:
         jobs = []
@@ -174,6 +181,7 @@ class NvidiaResearchScraper(BaseScraper):
                         job_type=classify_job_type(title, ""),
                         source=self.name,
                         application_method="form",
+                        company_tier=self.company_tier,
                     ))
             except Exception as e:
                 logger.debug("[nvidia] %s: %s", kw, e)
@@ -188,17 +196,18 @@ def build_company_scrapers(companies: list[dict]) -> list[BaseScraper]:
         portal = co.get("portal", "generic")
         name = co["name"]
         keywords = co.get("search_terms", ["machine learning"])
+        tier = co.get("tier", "")
 
         if portal == "greenhouse":
             board = co.get("greenhouse_board", "")
             if board:
-                scrapers.append(GreenhouseScraper(name, board, keywords))
+                scrapers.append(GreenhouseScraper(name, board, keywords, company_tier=tier))
         elif portal == "meta":
-            scrapers.append(MetaAIScraper(keywords))
+            scrapers.append(MetaAIScraper(keywords, company_tier=tier))
         elif portal == "microsoft":
-            scrapers.append(MicrosoftResearchScraper(keywords))
+            scrapers.append(MicrosoftResearchScraper(keywords, company_tier=tier))
         elif portal == "nvidia" or (portal == "generic" and "nvidia" in name.lower()):
-            scrapers.append(NvidiaResearchScraper(keywords))
+            scrapers.append(NvidiaResearchScraper(keywords, company_tier=tier))
         else:
             logger.debug("No dedicated scraper for %s (portal=%s); skipping", name, portal)
 

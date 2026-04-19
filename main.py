@@ -77,11 +77,16 @@ def load_config() -> dict:
 # ─── HTML Views ────────────────────────────────────────────────────────────────
 
 @app.get("/", response_class=HTMLResponse)
-def dashboard(request: Request, status: str = "queued", session: Session = Depends(get_session)):
+def dashboard(request: Request, status: str = "queued", tier: Optional[str] = None, session: Session = Depends(get_session)):
     cfg = load_config()
     min_score = cfg["targets"]["min_relevance_score"]
 
     jobs = get_jobs(session, status=status if status != "all" else None, min_score=0)
+
+    # Filter by tier if specified
+    if tier and tier != "all":
+        jobs = [j for j in jobs if j.company_tier == tier]
+
     counts = {
         "queued": len([j for j in get_jobs(session, status="queued")]),
         "approved": len([j for j in get_jobs(session, status="approved")]),
@@ -97,7 +102,54 @@ def dashboard(request: Request, status: str = "queued", session: Session = Depen
             "jobs": jobs,
             "counts": counts,
             "active_status": status,
+            "active_tier": tier,
             "min_score": min_score,
+        },
+    )
+
+
+@app.get("/companies", response_class=HTMLResponse)
+def companies_page(request: Request, session: Session = Depends(get_session)):
+    """Show companies grouped by competitiveness tier."""
+    cfg = load_config()
+
+    # Tier definitions with labels
+    tiers = {
+        "high": {"label": "Highly Competitive", "description": "Aspirational targets (FAANG-level)", "color": "orange"},
+        "medium": {"label": "Medium Difficulty", "description": "Realistic targets", "color": "blue"},
+        "startup": {"label": "Startups", "description": "Agile and fast-moving", "color": "green"},
+        "accessible": {"label": "More Accessible", "description": "Solid backup options", "color": "gray"},
+    }
+
+    # Collect companies and their job counts
+    all_jobs = get_jobs(session)
+
+    tier_data = {}
+    for tier_key, tier_info in tiers.items():
+        companies_in_tier = {}
+
+        # Collect all companies from config with this tier
+        for co in cfg.get("companies", []) + cfg.get("startups", []):
+            if co.get("tier") == tier_key:
+                company_name = co["name"]
+                company_jobs = [j for j in all_jobs if j.organization == company_name]
+                companies_in_tier[company_name] = {
+                    "count": len(company_jobs),
+                    "jobs": sorted(company_jobs, key=lambda j: j.relevance_score, reverse=True),
+                    "url": co.get("careers_url", "#"),
+                }
+
+        if companies_in_tier:
+            tier_data[tier_key] = {
+                **tier_info,
+                "companies": sorted(companies_in_tier.items(), key=lambda x: x[1]["count"], reverse=True),
+            }
+
+    return templates.TemplateResponse(
+        "company_tiers.html",
+        {
+            "request": request,
+            "tiers": tier_data,
         },
     )
 
@@ -142,6 +194,7 @@ def list_jobs(status: Optional[str] = None, min_score: int = 0, session: Session
             "contact_email": j.contact_email,
             "discovered_at": j.discovered_at.isoformat(),
             "status": j.status,
+            "company_tier": j.company_tier,
         }
         for j in jobs
     ]
@@ -168,6 +221,7 @@ def get_job_detail(job_id: int, session: Session = Depends(get_session)):
             "contact_email": job.contact_email,
             "discovered_at": job.discovered_at.isoformat(),
             "status": job.status,
+            "company_tier": job.company_tier,
         },
         "application": {
             "id": application.id,
